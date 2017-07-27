@@ -1,1 +1,6 @@
-
+$ cat .gitignore
+/MedidorPotencia/Debug/*
+/MedidorPotencia/Release/*
+/MedidorPotencia/.xdchelp
+/MedidorPotencia/.launches/*
+/MedidorPotencia/.config/*
