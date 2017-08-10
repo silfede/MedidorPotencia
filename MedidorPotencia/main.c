@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-static uint16_t N;
+static uint32_t N=0;
 
 volatile uint16_t N_ADC[128];
 static uint8_t index=0;
@@ -40,11 +40,8 @@ int main(void)
      ************************CONFIGURACIÓN DE RELOJES****************************
      ****************************************************************************/
 
-    // Seteo el DCO a máxima frecuencia 64 MHz
-    /*
-     * Este comando no anda para la versión de la placa de Fede (pre-release).
-    MAP_CS_setDCOFrequency(64000000);
-     */
+    // Seteo el DCO a máxima frecuencia 48 MHz
+
     MAP_CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
     // Asigno el DCO como Master Clock
@@ -73,38 +70,41 @@ int main(void)
     /****************************************************************************
      ************************CONFIGURACIÓN DE ADC14******************************
      ****************************************************************************/
-    NVIC->ISER[0] = 1 << ((ADC14_IRQn) & 31);
 
-    // Seteo la referencia de voltaje en 2,5 V
-    MAP_REF_A_setReferenceVoltage(REF_A_VREF2_5V);
-    MAP_REF_A_enableReferenceVoltage();
-
-   /* // Habilito el módulo ADC y seteo el clock del mismo a MCLK
+    // Inicializo el módulo ADC
     MAP_ADC14_enableModule();
-    MAP_ADC14_initModule(ADC_CLOCKSOURCE_MCLK, ADC_PREDIVIDER_1, ADC_DIVIDER_1,0);*/
+    // Seteo el MCLK como reloj
+    MAP_ADC14_initModule(ADC_CLOCKSOURCE_MCLK, ADC_PREDIVIDER_1, ADC_DIVIDER_1,
+            0);
 
-    // Configuración módulo ADC
-    ADC14->CTL0 = ADC14_CTL0_ON |       // Enciendo el módulo
-            ADC14_CTL0_SSEL__MCLK |     // Selecciono MCLK como source
-            ADC14_CTL0_MSC |            // Conversión automática
-            ADC14_CTL0_SHT0__4 |        // 4 períodos de S&H (mínimo)
-            ADC14_CTL0_SHP |
-            ADC14_CTL0_CONSEQ_3;        // Repetir secuencia de canales
-    ADC14->CTL1 = ADC14_CTL1_RES__12BIT;
+    // Configuro entradas para usar con periférico
+    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P5,
+            GPIO_PIN5 | GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
 
-    ADC14->MCTL[0] = ADC14_MCTLN_INCH_0 | ADC14_MCTLN_VRSEL_14;  // ref+=Vref, channel = A0
-    ADC14->MCTL[1] = ADC14_MCTLN_INCH_1 | ADC14_MCTLN_VRSEL_14 |// ref+=Vref, channel = A1
-            ADC14_MCTLN_EOS;                                    // End of sequence
+    // Configuro conversión secuencial de memoria 0 y 1, en bucle
+    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM1, true);
 
+    // Asigno las memorias a los canales del ADC, referencia AVCC
+    MAP_ADC14_configureConversionMemory(ADC_MEM0,
+            ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM1,
+            ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A2, false);
 
-    ADC14->IER0 = ADC14_IER0_IE1;           // Habilita interrupción A1
+    // Cambia entre canales automáticamente
+    MAP_ADC14_enableSampleTimer(ADC_AUTOMATIC_ITERATION);
 
+    // Habilito interrupciones del puerto (son con respecto a la memoria)
+    MAP_ADC14_enableInterrupt(ADC_INT1);
 
-
+    // Habilito interrupciones del ADC
+    MAP_Interrupt_enableInterrupt(INT_ADC14);
+    
     // Habilito interrupciones generales
     MAP_Interrupt_enableMaster();
 
-    // habilito conversión del ADC
+    // Inicio conversión
     ADC14->CTL0 |= ADC14_CTL0_ENC | ADC14_CTL0_SC;
 
     while(1)
@@ -117,6 +117,7 @@ int main(void)
  * ISR del puerto 1
  * (Notar que es del puerto 1 en su totalidad, de ahí que debe verificar
  * que efectivamente provenga del P1.5).
+ * A la hora de probar otra cosa, aterrar esta pata
  */
 void PORT1_IRQHandler(void)
 {
