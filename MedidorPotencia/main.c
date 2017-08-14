@@ -26,31 +26,33 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define SAMPLE_LENGTH 5
+#define SAMPLE_LENGTH 1500
 
 /* DMA Control Table */
 #ifdef ewarm
-#pragma data_alignment=256
+#pragma data_alignment=1024
 #else
-#pragma DATA_ALIGN(controlTable, 256)
+#pragma DATA_ALIGN(controlTable, 1024)
 #endif
-uint8_t controlTable[256];
+uint8_t controlTable[1024];
 
 static uint32_t N=0;
 
 volatile uint16_t N_ADC[128];
 static uint8_t index=0;
 
-uint16_t voltaje[SAMPLE_LENGTH];
-uint16_t corriente[SAMPLE_LENGTH];
+// Índice para indicar la secuencia del DMA
+static uint8_t i=0;
+
+uint32_t data[SAMPLE_LENGTH];
+
 static volatile uint32_t mclk;
 int main(void)
 {
     /* Stop Watchdog  */
     MAP_WDT_A_holdTimer();
 
-    memset(voltaje, 0x00, SAMPLE_LENGTH);
-    memset(corriente, 0x00, SAMPLE_LENGTH);
+    memset(data, 0x00, 64);
     memset(controlTable, 0x00, 1024);
 
     /****************************************************************************
@@ -99,13 +101,73 @@ int main(void)
             GPIO_PIN5 | GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
 
     // Configuro conversión secuencial de memoria 0 y 1, en bucle
-    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM1, true);
+    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM31, true);
 
 
     // Asigno las memorias a los canales del ADC, referencia AVCC
     MAP_ADC14_configureConversionMemory(ADC_MEM0,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM1,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM2,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM3,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM4,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM5,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM6,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM7,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM8,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM9,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM10,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM11,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM12,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM13,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM14,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM15,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM16,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM17,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM18,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM19,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM20,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM21,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM22,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM23,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM24,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM25,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM26,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM27,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM28,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM29,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A1, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM30,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+            ADC_INPUT_A0, false);
+    MAP_ADC14_configureConversionMemory(ADC_MEM31,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
 
     ADC14_setPowerMode(ADC_ULTRA_LOW_POWER_MODE);
@@ -128,24 +190,24 @@ int main(void)
 
     MAP_DMA_assignChannel(DMA_CH7_ADC14);
 
-    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
-                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
-                                  UDMA_ATTR_HIGH_PRIORITY |
-                                  UDMA_ATTR_REQMASK);
-    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
+//    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
+//                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
+//                                  UDMA_ATTR_HIGH_PRIORITY |
+//                                  UDMA_ATTR_REQMASK);
+//    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
 
 
     MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1);
+        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
     MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
         UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-        voltaje, SAMPLE_LENGTH);
+        (void*) &data[0], 32);
 
     MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1);
+        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
     MAP_DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[1],
-        corriente, SAMPLE_LENGTH);
+        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+        (void*) &data[32], 32);
 
     
 
@@ -201,7 +263,26 @@ void ADC14_IRQHandler(void)
 
 void DMA_INT1_IRQHandler(void)
 {
-    N=N+1;
-    DMA_clearInterruptFlag(7);
-    DMA_disableChannel(7);
+    i=i+1;
+    if(i==5)
+    {
+        MAP_DMA_disableChannel(7);
+    }
+    /* Switch between primary and alternate bufferes with DMA's PingPong mode */
+    if (MAP_DMA_getChannelAttribute(7) & UDMA_ATTR_ALTSELECT)
+    {
+        MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
+        MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+            (void*) &data[32*i], 32);
+    }
+    else
+    {
+        MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
+        DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+            (void*) &data[32*i], 32);
+    }
 }
