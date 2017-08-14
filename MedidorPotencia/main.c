@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define SAMPLE_LENGTH 512
+#define SAMPLE_LENGTH 5
 
 /* DMA Control Table */
 #ifdef ewarm
@@ -56,15 +56,12 @@ int main(void)
     /****************************************************************************
      ************************CONFIGURACIÓN DE RELOJES****************************
      ****************************************************************************/
+    // Habilito FPU
     MAP_FPU_enableModule();
-    // Seteo el DCO a máxima frecuencia 48 MHz
 
-    //MAP_CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-    //MAP_CS_setDCOFrequency(48000000);
-
-    // Asigno el DCO como Master Clock
-    MAP_CS_initClockSignal(CS_MCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_1);
-    /****************************************************************************/
+    /*
+     * El seteo de la frecuencia la realizo en el archivo system_msp432p401r.c
+     */
     mclk = CS_getMCLK();
 
     /****************************************************************************
@@ -72,14 +69,16 @@ int main(void)
      ****************************************************************************/
 
     // Configuro 1.5 como entrada
-    MAP_GPIO_setAsInputPin(GPIO_PORT_P1, GPIO_PIN5);
+    //MAP_GPIO_setAsInputPin(GPIO_PORT_P1, GPIO_PIN4);
+    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN4);
+
 
     // Limpio bandera de interrupciones y activo las del puerto 1.5
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN5);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN5);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN4);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN4);
 
     // Seteo que interrumpta por flanco de subida
-    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P1,GPIO_PIN5,GPIO_LOW_TO_HIGH_TRANSITION);
+    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P1,GPIO_PIN4,GPIO_LOW_TO_HIGH_TRANSITION);
 
     // Activo las interrupciones generales del puerto 1
     //MAP_Interrupt_enableInterrupt(INT_PORT1);
@@ -109,9 +108,16 @@ int main(void)
     MAP_ADC14_configureConversionMemory(ADC_MEM1,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
 
+    ADC14_setPowerMode(ADC_ULTRA_LOW_POWER_MODE);
     // Cambia entre canales automáticamente
     MAP_ADC14_enableSampleTimer(ADC_AUTOMATIC_ITERATION);
 
+    /*MAP_ADC14_enableInterrupt(ADC_INT0);
+    MAP_ADC14_enableInterrupt(ADC_INT1);
+
+
+    // Enabling Interrupts
+    MAP_Interrupt_enableInterrupt(INT_ADC14);*/
     /****************************************************************************/
 
     /****************************************************************************
@@ -154,7 +160,8 @@ int main(void)
 
 
     // Inicio conversión
-    ADC14->CTL0 |= ADC14_CTL0_ENC | ADC14_CTL0_SC;
+    MAP_ADC14_enableConversion();
+    MAP_ADC14_toggleConversionTrigger();
 
     while(1)
     {
@@ -165,34 +172,36 @@ int main(void)
 /*
  * ISR del puerto 1
  * (Notar que es del puerto 1 en su totalidad, de ahí que debe verificar
- * que efectivamente provenga del P1.5).
+ * que efectivamente provenga del P1.4).
  * A la hora de probar otra cosa, aterrar esta pata
  */
 void PORT1_IRQHandler(void)
 {
-    if (P1IFG & BIT5)
+    if (P1IFG & BIT4)
     {
-        N_ADC[index] = N;
-        index = (index + 1) & 0x7F;
-        N=0;
+        MAP_ADC14_toggleConversionTrigger();
     }
-    P1IFG &= ~BIT5;
+    P1IFG &= ~BIT4;
 }
 
 
-/*void ADC14_IRQHandler(void)
+void ADC14_IRQHandler(void)
 {
+    uint64_t status = MAP_ADC14_getEnabledInterruptStatus();
+    MAP_ADC14_clearInterruptFlag(status);
+
+    MAP_ADC14_toggleConversionTrigger();
     if(ADC14->IFGR0 & ADC14_IFGR0_IFG1)
     {
         N = N+1;
         // Limpio interrupciones
-        ADC14->CLRIFGR0 |= ADC14_IFGR0_IFG1 | ADC14_IFGR0_IFG0;
     }
 
-}*/
+}
 
 void DMA_INT1_IRQHandler(void)
 {
     N=N+1;
-    MAP_DMA_clearInterruptFlag(7);
+    DMA_clearInterruptFlag(7);
+    DMA_disableChannel(7);
 }
