@@ -28,32 +28,94 @@
 
 #define SAMPLE_LENGTH 1500
 
-/* DMA Control Table */
+/* DMA Control Table
 #ifdef ewarm
-#pragma data_alignment=1024
+#pragma data_alignment=256
 #else
-#pragma DATA_ALIGN(controlTable, 1024)
+#pragma DATA_ALIGN(controlTable, 256)
 #endif
-uint8_t controlTable[1024];
+uint8_t controlTable[256];*/
+
+/* DMA Control Table */
+#if defined(__TI_COMPILER_VERSION__)
+#pragma DATA_ALIGN(MSP_EXP432P401RLP_DMAControlTable, 256)
+#elif defined(__IAR_SYSTEMS_ICC__)
+#pragma data_alignment=256
+#elif defined(__GNUC__)
+__attribute__ ((aligned (256)))
+#elif defined(__CC_ARM)
+__align(256)
+#endif
+static DMA_ControlTable MSP_EXP432P401RLP_DMAControlTable[16];
 
 static uint32_t N=0;
+uint32_t data[512];
 
-volatile uint16_t N_ADC[128];
-static uint8_t index=0;
+const DMA_ControlTable altTaskList[9] =
+{
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void*) &data[0],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*2],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*3],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*4],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*5],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*6],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*7],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            ),
+    DMA_TaskStructEntry(32, UDMA_SIZE_32,
+            UDMA_SRC_INC_32, &ADC14->MEM[0],
+            UDMA_DST_INC_32, (void *)&data[32*8],
+            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            )
+};
+
+
 
 // Índice para indicar la secuencia del DMA
-static uint8_t i=0;
+static uint16_t i=0;
+static uint16_t j=0;
 
-uint32_t data[SAMPLE_LENGTH];
 
 static volatile uint32_t mclk;
 int main(void)
 {
     /* Stop Watchdog  */
     MAP_WDT_A_holdTimer();
+    MAP_Interrupt_disableMaster();
 
-    memset(data, 0x00, 64);
-    memset(controlTable, 0x00, 1024);
+    memset(data, 0x00, 512);
+    //memset(controlTable, 0x00, 1024);
 
     /****************************************************************************
      ************************CONFIGURACIÓN DE RELOJES****************************
@@ -71,19 +133,19 @@ int main(void)
      ****************************************************************************/
 
     // Configuro 1.5 como entrada
-    //MAP_GPIO_setAsInputPin(GPIO_PORT_P1, GPIO_PIN4);
-    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN4);
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P4, GPIO_PIN6);
+    //MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN4);
 
 
     // Limpio bandera de interrupciones y activo las del puerto 1.5
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN4);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN4);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, GPIO_PIN6);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P4, GPIO_PIN6);
 
     // Seteo que interrumpta por flanco de subida
-    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P1,GPIO_PIN4,GPIO_LOW_TO_HIGH_TRANSITION);
+    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P4,GPIO_PIN6,GPIO_LOW_TO_HIGH_TRANSITION);
 
     // Activo las interrupciones generales del puerto 1
-    //MAP_Interrupt_enableInterrupt(INT_PORT1);
+    MAP_Interrupt_enableInterrupt(INT_PORT4);
     /****************************************************************************/
 
     /****************************************************************************
@@ -113,6 +175,7 @@ int main(void)
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM3,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
+
     MAP_ADC14_configureConversionMemory(ADC_MEM4,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM5,ADC_VREFPOS_AVCC_VREFNEG_VSS,
@@ -121,6 +184,7 @@ int main(void)
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM7,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
+
     MAP_ADC14_configureConversionMemory(ADC_MEM8,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM9,ADC_VREFPOS_AVCC_VREFNEG_VSS,
@@ -170,7 +234,8 @@ int main(void)
     MAP_ADC14_configureConversionMemory(ADC_MEM31,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
 
-    ADC14_setPowerMode(ADC_ULTRA_LOW_POWER_MODE);
+
+    ADC14_setPowerMode(ADC_UNRESTRICTED_POWER_MODE);
     // Cambia entre canales automáticamente
     MAP_ADC14_enableSampleTimer(ADC_AUTOMATIC_ITERATION);
 
@@ -185,16 +250,16 @@ int main(void)
     /****************************************************************************
      **************************CONFIGURACIÓN DE DMA******************************
      ****************************************************************************/
-    MAP_DMA_enableModule();
+    /*MAP_DMA_enableModule();
     MAP_DMA_setControlBase(controlTable);
 
     MAP_DMA_assignChannel(DMA_CH7_ADC14);
 
-//    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
-//                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
-//                                  UDMA_ATTR_HIGH_PRIORITY |
-//                                  UDMA_ATTR_REQMASK);
-//    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
+    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
+                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
+                                  UDMA_ATTR_HIGH_PRIORITY |
+                                  UDMA_ATTR_REQMASK);
+    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
 
 
     MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
@@ -214,16 +279,40 @@ int main(void)
     MAP_DMA_assignInterrupt(DMA_INT1, 7);
     MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
 
-    MAP_DMA_enableChannel(7);
+    MAP_DMA_enableChannel(7);*/
 
 
+    /* Configuring DMA module */
+    MAP_DMA_enableModule();
+    MAP_DMA_setControlBase(MSP_EXP432P401RLP_DMAControlTable);
+    /*
+     * Setup the DMA + ADC14 interface
+     *  Disabling channel attributes
+     */
+    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
+                                     UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
+                                     UDMA_ATTR_HIGH_PRIORITY |
+                                     UDMA_ATTR_REQMASK);
+    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
+    /*
+     * Set the DMAs primary channel for peripheral scatter gather mode
+     */
+    MAP_DMA_setChannelScatterGather(DMA_CH7_ADC14, 9, (void*)&altTaskList[0], false);
+    /* Assigning/Enabling Interrupts */
+//    MAP_DMA_assignInterrupt(DMA_INT1, 7);
+//    MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
+    MAP_DMA_assignChannel(DMA_CH7_ADC14);
+//    MAP_DMA_clearInterruptFlag(7);
     // Habilito interrupciones generales
-    MAP_Interrupt_enableMaster();
+
 
 
     // Inicio conversión
-    MAP_ADC14_enableConversion();
-    MAP_ADC14_toggleConversionTrigger();
+
+
+    P2->DIR |= BIT3;
+    MAP_Interrupt_enableMaster();
+    //ADC14->CTL0 |= ADC14_CTL0_SC;
 
     while(1)
     {
@@ -231,32 +320,39 @@ int main(void)
     }
 }
 
-/*
- * ISR del puerto 1
- * (Notar que es del puerto 1 en su totalidad, de ahí que debe verificar
- * que efectivamente provenga del P1.4).
- * A la hora de probar otra cosa, aterrar esta pata
- */
-void PORT1_IRQHandler(void)
+
+
+void PORT4_IRQHandler(void)
 {
-    if (P1IFG & BIT4)
+    if(N==0)
     {
-        MAP_ADC14_toggleConversionTrigger();
+        ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
+        MAP_DMA_enableChannel(7);
+
+        P2->OUT |= BIT3;
     }
-    P1IFG &= ~BIT4;
+    else if (N==5)
+    {
+        ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
+        MAP_DMA_disableModule();
+        MAP_Interrupt_disableInterrupt(INT_PORT4);
+        P2->OUT &= ~BIT3;
+        P2->OUT &= ~BIT3;
+    }
+    P4->IFG &= ~BIT6;
+    ++N;
 }
 
 
 void ADC14_IRQHandler(void)
 {
-    uint64_t status = MAP_ADC14_getEnabledInterruptStatus();
-    MAP_ADC14_clearInterruptFlag(status);
-
-    MAP_ADC14_toggleConversionTrigger();
     if(ADC14->IFGR0 & ADC14_IFGR0_IFG1)
     {
-        N = N+1;
+        ++j;
+
         // Limpio interrupciones
+        ADC14->CLRIFGR0 |= ADC14_IFGR0_IFG0 | ADC14_IFGR0_IFG0;
+
     }
 
 }
@@ -264,10 +360,8 @@ void ADC14_IRQHandler(void)
 void DMA_INT1_IRQHandler(void)
 {
     i=i+1;
-    if(i==5)
-    {
-        MAP_DMA_disableChannel(7);
-    }
+
+
     /* Switch between primary and alternate bufferes with DMA's PingPong mode */
     if (MAP_DMA_getChannelAttribute(7) & UDMA_ATTR_ALTSELECT)
     {
