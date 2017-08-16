@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #define SAMPLE_LENGTH 10
+#define DMA_BLOCK_SIZE 24
 
 /* DMA Control Table */
 #ifdef ewarm
@@ -64,6 +65,9 @@ int main(void)
     /*
      * El seteo de la frecuencia la realizo en el archivo system_msp432p401r.c
      */
+    MAP_PCM_setPowerState(PCM_AM_LDO_VCORE1);
+    MAP_CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+    MAP_CS_initClockSignal(CS_MCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_1 );
     mclk = CS_getMCLK();
 
     /****************************************************************************
@@ -101,15 +105,16 @@ int main(void)
             GPIO_PIN5 | GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
 
     // Configuro conversión secuencial de memoria 0 y 1, en bucle
-    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM25, true);
-
+    //MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM1, true);
+    MAP_ADC14_configureSingleSampleMode(ADC_MEM0, true);
+      MAP_ADC14_configureConversionMemory(ADC_MEM0, ADC_VREFPOS_AVCC_VREFNEG_VSS, ADC_INPUT_A0, false);
 
     // Asigno las memorias a los canales del ADC, referencia AVCC
-    MAP_ADC14_configureConversionMemory(ADC_MEM0,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+/*    MAP_ADC14_configureConversionMemory(ADC_MEM0,ADC_VREFPOS_AVCC_VREFNEG_VSS,
               ADC_INPUT_A0, false);
       MAP_ADC14_configureConversionMemory(ADC_MEM1,ADC_VREFPOS_AVCC_VREFNEG_VSS,
               ADC_INPUT_A1, false);
-      MAP_ADC14_configureConversionMemory(ADC_MEM2,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+     MAP_ADC14_configureConversionMemory(ADC_MEM2,ADC_VREFPOS_AVCC_VREFNEG_VSS,
               ADC_INPUT_A0, false);
       MAP_ADC14_configureConversionMemory(ADC_MEM3,ADC_VREFPOS_AVCC_VREFNEG_VSS,
               ADC_INPUT_A1, false);
@@ -156,53 +161,57 @@ int main(void)
       MAP_ADC14_configureConversionMemory(ADC_MEM24,ADC_VREFPOS_AVCC_VREFNEG_VSS,
               ADC_INPUT_A0, false);
       MAP_ADC14_configureConversionMemory(ADC_MEM25,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-              ADC_INPUT_A1, false);
+              ADC_INPUT_A1, false);*/
 
     ADC14_setPowerMode(ADC_UNRESTRICTED_POWER_MODE);
     // Cambia entre canales automáticamente
     MAP_ADC14_enableSampleTimer(ADC_AUTOMATIC_ITERATION);
 
-    /*MAP_ADC14_enableInterrupt(ADC_INT0);
-    MAP_ADC14_enableInterrupt(ADC_INT1);
+    MAP_ADC14_enableInterrupt(ADC_INT0);
+    //MAP_ADC14_enableInterrupt(ADC_INT0|ADC_INT1);
+//    MAP_ADC14_enableInterrupt(ADC_INT0|ADC_INT1|ADC_INT2|ADC_INT3|ADC_INT4|ADC_INT5|ADC_INT6|
+//                              ADC_INT7|ADC_INT8|ADC_INT9|ADC_INT10|ADC_INT11|ADC_INT12|
+//                              ADC_INT13|ADC_INT14|ADC_INT15|ADC_INT16|ADC_INT17|ADC_INT18|
+//                              ADC_INT19|ADC_INT20|ADC_INT21|ADC_INT22|ADC_INT23);
 
 
     // Enabling Interrupts
-    MAP_Interrupt_enableInterrupt(INT_ADC14);*/
+    MAP_Interrupt_enableInterrupt(INT_ADC14);
     /****************************************************************************/
 
     /****************************************************************************
      **************************CONFIGURACIÓN DE DMA******************************
      ****************************************************************************/
-    DMA_enableModule();
-    DMA_setControlBase(controlTable);
-
-
-    DMA_disableChannelAttribute(DMA_CH7_ADC14,
-                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
-                                  UDMA_ATTR_HIGH_PRIORITY |
-                                  UDMA_ATTR_REQMASK);
-    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
-
-
-    MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
-    MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-        data, 26);
-
-    MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
-    MAP_DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-        (void*) &data[26], 26);
-
-
-
-
-    MAP_DMA_assignInterrupt(DMA_INT1, 7);
-    MAP_DMA_assignChannel(DMA_CH7_ADC14);
-    MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
-    MAP_DMA_clearInterruptFlag(7);
+//    DMA_enableModule();
+//    DMA_setControlBase(controlTable);
+//
+//
+//    DMA_disableChannelAttribute(DMA_CH7_ADC14,
+//                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
+//                                  UDMA_ATTR_HIGH_PRIORITY |
+//                                  UDMA_ATTR_REQMASK);
+//    //MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
+//
+//
+//    MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+//        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+//    MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+//        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+//        data, DMA_BLOCK_SIZE);
+//
+//    MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+//        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+//    MAP_DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+//        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+//        (void*) &data[DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+//
+//
+//
+//
+//    MAP_DMA_assignInterrupt(DMA_INT1, 7);
+//    MAP_DMA_assignChannel(DMA_CH7_ADC14);
+//    MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
+//    MAP_DMA_clearInterruptFlag(7);
 
 
 
@@ -231,15 +240,15 @@ void PORT3_IRQHandler(void)
 {
     if (N==0)
     {
-        MAP_DMA_enableChannel(7);
+        //MAP_DMA_enableChannel(7);
         // Inicio conversión
         MAP_ADC14_enableConversion();
         MAP_ADC14_toggleConversionTrigger();
     }
-    else if (N==2)
+    else if (N==10)
     {
         MAP_ADC14_disableModule();
-        MAP_DMA_disableModule();
+        //MAP_DMA_disableModule();
         ++N;
     }
     P1IFG &= ~BIT4;
@@ -247,39 +256,34 @@ void PORT3_IRQHandler(void)
 }
 
 
-/*void ADC14_IRQHandler(void)
+void ADC14_IRQHandler(void)
 {
     uint64_t status = MAP_ADC14_getEnabledInterruptStatus();
     MAP_ADC14_clearInterruptFlag(status);
 
-    MAP_ADC14_toggleConversionTrigger();
-    if(ADC14->IFGR0 & ADC14_IFGR0_IFG1)
-    {
-        N = N+1;
-        // Limpio interrupciones
-    }
-
-}*/
-
-void DMA_INT1_IRQHandler(void)
-{
     ++i;
-    /* Switch between primary and alternate bufferes with DMA's PingPong mode */
-    if (DMA_getChannelAttribute(7) & UDMA_ATTR_ALTSELECT)
-    {
-        DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
-        DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-            (void*) &data[(i+1)*26], 26);
-    }
-    else
-    {
-        DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
-        DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-            (void*) &data[(i+1)*26], 26);
-    }
-    //DMA_enableChannel(7);
+
 }
+
+//void DMA_INT1_IRQHandler(void)
+//{
+//    ++i;
+//    /* Switch between primary and alternate bufferes with DMA's PingPong mode */
+//    if (DMA_getChannelAttribute(7) & UDMA_ATTR_ALTSELECT)
+//    {
+//        DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+//            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+//        DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+//            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+//            (void*) &data[(i+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+//    }
+//    else
+//    {
+//        DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+//            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+//        DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+//            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+//            (void*) &data[(i+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+//    }
+//    //DMA_enableChannel(7);
+//}
