@@ -11,6 +11,12 @@
 #ifndef MODULO_PWRCONF_H_
 #define MODULO_PWRCONF_H_
 
+#define DMA_BLOCK_SIZE 24
+#define NUMBER_OF_BLOCKS 220
+
+// Bloque de datos
+extern uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
+
 
 /**
  * Configuración del módulo ADC medición de potencia.

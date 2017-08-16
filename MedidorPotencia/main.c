@@ -30,9 +30,7 @@
 
 
 
-uint32_t data[2752];
-uint16_t N=0;
-
+uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
 
 
 
@@ -46,9 +44,11 @@ int main(void)
 {
     /* Stop Watchdog  */
     MAP_WDT_A_holdTimer();
+
+    /* Deshabilitar las interrupciones antes de configurar todo */
     MAP_Interrupt_disableMaster();
 
-    memset(data, 0x00, 2752);
+    memset(data, 0x00, NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE);
 
 
     /****************************************************************************

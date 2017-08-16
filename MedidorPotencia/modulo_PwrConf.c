@@ -6,20 +6,22 @@
  */
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 #include "modulo_PwrConf.h"
-#include "dmaTasks.h"
+
 
 
 /* DMA Control Table */
-#if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_ALIGN(MSP_EXP432P401RLP_DMAControlTable, 256)
-#elif defined(__IAR_SYSTEMS_ICC__)
+#ifdef ewarm
 #pragma data_alignment=256
-#elif defined(__GNUC__)
-__attribute__ ((aligned (256)))
-#elif defined(__CC_ARM)
-__align(256)
+#else
+#pragma DATA_ALIGN(controlTable, 256)
 #endif
-static DMA_ControlTable MSP_EXP432P401RLP_DMAControlTable[16];
+uint8_t controlTable[256];
+
+/* Local variables */
+// i indica cuantas iteraciones necesitó del ping-pong
+static uint16_t i;
+// Número de períodos
+static uint16_t N;
 
 /*------------------------------------------------------------------------------*/
 
@@ -36,7 +38,7 @@ void configADC()
             GPIO_PIN5 | GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
 
     // Configuro conversión secuencial de memoria 0 y 1, en bucle
-    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM25, true);
+    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM23, true);
 
     // Asigno las memorias a los canales del ADC, referencia AVCC
     MAP_ADC14_configureConversionMemory(ADC_MEM0,ADC_VREFPOS_AVCC_VREFNEG_VSS,
@@ -87,22 +89,6 @@ void configADC()
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM23,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM24,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A0, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM25,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A1, false);
-//    MAP_ADC14_configureConversionMemory(ADC_MEM26,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-//            ADC_INPUT_A0, false);
-//    MAP_ADC14_configureConversionMemory(ADC_MEM27,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-//            ADC_INPUT_A1, false);
-//    MAP_ADC14_configureConversionMemory(ADC_MEM28,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-//            ADC_INPUT_A0, false);
-//    MAP_ADC14_configureConversionMemory(ADC_MEM29,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-//            ADC_INPUT_A1, false);
-//    MAP_ADC14_configureConversionMemory(ADC_MEM30,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-//            ADC_INPUT_A0, false);
-//    MAP_ADC14_configureConversionMemory(ADC_MEM31,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-//            ADC_INPUT_A1, false);
 
     MAP_ADC14_setPowerMode(ADC_UNRESTRICTED_POWER_MODE);
     // Cambia entre canales automáticamente
@@ -113,22 +99,57 @@ void configADC()
 
 void configDMA()
 {
+    i = 0;
     // Habilitación del módulo
-    MAP_DMA_enableModule();
+   DMA_enableModule();
+   DMA_setControlBase(controlTable);
 
-    MAP_DMA_setControlBase(MSP_EXP432P401RLP_DMAControlTable);
 
-    // Seteo de DMA + ADC. Habilita modo ráfaga
-    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
-                                     UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
-                                     UDMA_ATTR_HIGH_PRIORITY |
-                                     UDMA_ATTR_REQMASK);
-    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
+   DMA_disableChannelAttribute(DMA_CH7_ADC14,
+                                 UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
+                                 UDMA_ATTR_HIGH_PRIORITY |
+                                 UDMA_ATTR_REQMASK);
+   //MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
 
-    // Configuro modo ScatterGather, con destino en data
-    MAP_DMA_setChannelScatterGather(DMA_CH7_ADC14, 86, (void*)&altTaskList[0], false);
 
-    MAP_DMA_assignChannel(DMA_CH7_ADC14);
+   MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+       UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+   MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+       UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+       data, DMA_BLOCK_SIZE);
+
+   MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+       UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+   MAP_DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+       UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+       (void*) &data[DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+
+   MAP_DMA_assignInterrupt(DMA_INT1, 7);
+   MAP_DMA_assignChannel(DMA_CH7_ADC14);
+   MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
+   MAP_DMA_clearInterruptFlag(7);
+}
+
+void DMA_INT1_IRQHandler(void)
+{
+    ++i;
+    /* Switch between primary and alternate bufferes with DMA's PingPong mode */
+    if (DMA_getChannelAttribute(7) & UDMA_ATTR_ALTSELECT)
+    {
+        DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+        DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
+            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+            (void*) &data[(i+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+    }
+    else
+    {
+        DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+            UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
+        DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
+            UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
+            (void*) &data[(i+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+    }
 }
 
 /*------------------------------------------------------------------------------*/
@@ -150,6 +171,7 @@ void configTimer()
 
 void configToggle()
 {
+    N = 0;
     // Configuro 4.6 como entrada
     MAP_GPIO_setAsInputPin(GPIO_PORT_P4, GPIO_PIN6);
 
@@ -171,13 +193,18 @@ void PORT4_IRQHandler(void)
 {
     if(N==0)
     {
+        // Enciendo el ADC
         ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
+        // Habilito el DMA
         MAP_DMA_enableChannel(7);
     }
-    else if (N==4)
+    else if (N==100)
     {
+        // Fuerzo a deshabilitar al DMA
         MAP_DMA_disableModule();
+        // Fuerzo a deshabilitar al ADC
         ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
+        // Deshabilito interrupciones del puerto toggle
         MAP_Interrupt_disableInterrupt(INT_PORT4);
     }
     P4->IFG &= ~BIT6;
