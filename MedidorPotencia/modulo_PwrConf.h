@@ -41,6 +41,7 @@ void configDMA();
  * Configuración:
  *      -CLK 48MHz
  *      -Divide hasta 24MHz
+ *      -Sin interrupciones activas
  */
 void configTimer();
 

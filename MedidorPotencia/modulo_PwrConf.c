@@ -109,7 +109,7 @@ void configADC()
     MAP_ADC14_enableSampleTimer(ADC_AUTOMATIC_ITERATION);
 }
 
-
+/*------------------------------------------------------------------------------*/
 
 void configDMA()
 {
@@ -131,13 +131,14 @@ void configDMA()
     MAP_DMA_assignChannel(DMA_CH7_ADC14);
 }
 
+/*------------------------------------------------------------------------------*/
 
 const Timer_A_ContinuousModeConfig continuousModeConfig =
 {
         TIMER_A_CLOCKSOURCE_SMCLK,           // SMCLK Clock Source (24MHz)
-        TIMER_A_CLOCKSOURCE_DIVIDER_2,      // ACLK/1 = 32.768khz
-        TIMER_A_TAIE_INTERRUPT_DISABLE,      // Enable Overflow ISR
-        TIMER_A_DO_CLEAR                    // Clear Counter
+        TIMER_A_CLOCKSOURCE_DIVIDER_2,       // SMCLK/2 = 12MHz
+        TIMER_A_TAIE_INTERRUPT_DISABLE,      // Disable Overflow ISR
+        TIMER_A_DO_CLEAR                     // Clear Counter
 };
 
 void configTimer()
@@ -145,6 +146,7 @@ void configTimer()
     MAP_Timer_A_configureContinuousMode(TIMER_A3_BASE, &continuousModeConfig);
 }
 
+/*------------------------------------------------------------------------------*/
 
 void configToggle()
 {
@@ -172,14 +174,13 @@ void PORT4_IRQHandler(void)
         ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
         MAP_DMA_enableChannel(7);
     }
-    else if (N==5)
+    else if (N==3)
     {
         ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
         MAP_DMA_disableModule();
         MAP_Interrupt_disableInterrupt(INT_PORT4);
-        P2->OUT &= ~BIT3;
-        P2->OUT &= ~BIT3;
     }
     P4->IFG &= ~BIT6;
     ++N;
 }
+/*------------------------------------------------------------------------------*/
