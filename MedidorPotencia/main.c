@@ -69,19 +69,19 @@ int main(void)
      ****************************************************************************/
 
     // Configuro 1.5 como entrada
-    //MAP_GPIO_setAsInputPin(GPIO_PORT_P1, GPIO_PIN4);
-    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN4);
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P4, GPIO_PIN6);
+    //MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN4);
 
 
     // Limpio bandera de interrupciones y activo las del puerto 1.5
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN4);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN4);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, GPIO_PIN6);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P4, GPIO_PIN6);
 
     // Seteo que interrumpta por flanco de subida
-    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P1,GPIO_PIN4,GPIO_LOW_TO_HIGH_TRANSITION);
+    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P4,GPIO_PIN6,GPIO_LOW_TO_HIGH_TRANSITION);
 
     // Activo las interrupciones generales del puerto 1
-    //MAP_Interrupt_enableInterrupt(INT_PORT1);
+    MAP_Interrupt_enableInterrupt(INT_PORT4);
     /****************************************************************************/
 
     /****************************************************************************
@@ -136,13 +136,13 @@ int main(void)
 
 
     MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1);
+        UDMA_SIZE_32 | UDMA_SRC_INC_NONE | UDMA_DST_INC_32 | UDMA_ARB_32);
     MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
         UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
         voltaje, SAMPLE_LENGTH);
 
     MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1);
+        UDMA_SIZE_32 | UDMA_SRC_INC_NONE | UDMA_DST_INC_32 | UDMA_ARB_32);
     MAP_DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
         UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[1],
         corriente, SAMPLE_LENGTH);
@@ -177,11 +177,16 @@ int main(void)
  */
 void PORT1_IRQHandler(void)
 {
-    if (P1IFG & BIT4)
+    if (N==0)
+    {
+        MAP_ADC14_toggleConversionTrigger();
+    }
+    else if (N==1)
     {
         MAP_ADC14_toggleConversionTrigger();
     }
     P1IFG &= ~BIT4;
+    ++N;
 }
 
 
@@ -201,7 +206,6 @@ void ADC14_IRQHandler(void)
 
 void DMA_INT1_IRQHandler(void)
 {
-    N=N+1;
     DMA_clearInterruptFlag(7);
     DMA_disableChannel(7);
 }
