@@ -14,32 +14,32 @@ const DMA_ControlTable altTaskList[NUMBER_OF_TASKS] =
     DMA_TaskStructEntry(DMA_BLOCK_SIZE, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],
             UDMA_DST_INC_32, (void*) &data[0],
-            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            UDMA_ARB_1024, (UDMA_MODE_PER_SCATTER_GATHER)
             ),
     DMA_TaskStructEntry(DMA_BLOCK_SIZE, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],
             UDMA_DST_INC_32, (void*) &data[DMA_BLOCK_SIZE],
-            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            UDMA_ARB_1024, (UDMA_MODE_PER_SCATTER_GATHER)
             ),
     DMA_TaskStructEntry(32, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],
             UDMA_DST_INC_32, (void*) &data[DMA_BLOCK_SIZE*2],
-            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            UDMA_ARB_1024, (UDMA_MODE_PER_SCATTER_GATHER)
             ),
     DMA_TaskStructEntry(32, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],
             UDMA_DST_INC_32, (void*) &data[DMA_BLOCK_SIZE*3],
-            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            UDMA_ARB_1, (UDMA_MODE_PER_SCATTER_GATHER)
             ),
     DMA_TaskStructEntry(32, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],
             UDMA_DST_INC_32, (void*) &data[DMA_BLOCK_SIZE*4],
-            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            UDMA_ARB_1, (UDMA_MODE_PER_SCATTER_GATHER)
             ),
     DMA_TaskStructEntry(32, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],
             UDMA_DST_INC_32, (void*) &data[DMA_BLOCK_SIZE*5],
-            UDMA_ARB_32, (UDMA_MODE_PER_SCATTER_GATHER)
+            UDMA_ARB_1, (UDMA_MODE_PER_SCATTER_GATHER)
             ),
     DMA_TaskStructEntry(32, UDMA_SIZE_32,
             UDMA_SRC_INC_32, &ADC14->MEM[0],

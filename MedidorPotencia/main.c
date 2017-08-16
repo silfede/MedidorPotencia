@@ -86,38 +86,6 @@ int main(void)
     /****************************************************************************
      **************************CONFIGURACIÓN DE DMA******************************
      ****************************************************************************/
-    /*MAP_DMA_enableModule();
-    MAP_DMA_setControlBase(controlTable);
-
-    MAP_DMA_assignChannel(DMA_CH7_ADC14);
-
-    MAP_DMA_disableChannelAttribute(DMA_CH7_ADC14,
-                                  UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
-                                  UDMA_ATTR_HIGH_PRIORITY |
-                                  UDMA_ATTR_REQMASK);
-    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
-
-
-    MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
-    MAP_DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
-        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-        (void*) &data[0], 32);
-
-    MAP_DMA_setChannelControl(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_1);
-    MAP_DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
-        UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-        (void*) &data[32], 32);
-
-    
-
-    MAP_DMA_assignInterrupt(DMA_INT1, 7);
-    MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
-
-    MAP_DMA_enableChannel(7);*/
-
-
    configDMA();
 
 

@@ -6,7 +6,7 @@
  */
 
 #define NUMBER_OF_TASKS 86
-#define DMA_BLOCK_SIZE 32
+#define DMA_BLOCK_SIZE 26
 
 #ifndef DMATASKS_H_
 #define DMATASKS_H_

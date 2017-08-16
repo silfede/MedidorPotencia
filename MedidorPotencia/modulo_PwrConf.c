@@ -36,7 +36,7 @@ void configADC()
             GPIO_PIN5 | GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
 
     // Configuro conversión secuencial de memoria 0 y 1, en bucle
-    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM31, true);
+    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM25, true);
 
     // Asigno las memorias a los canales del ADC, referencia AVCC
     MAP_ADC14_configureConversionMemory(ADC_MEM0,ADC_VREFPOS_AVCC_VREFNEG_VSS,
@@ -91,18 +91,18 @@ void configADC()
             ADC_INPUT_A0, false);
     MAP_ADC14_configureConversionMemory(ADC_MEM25,ADC_VREFPOS_AVCC_VREFNEG_VSS,
             ADC_INPUT_A1, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM26,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A0, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM27,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A1, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM28,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A0, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM29,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A1, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM30,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A0, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM31,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A1, false);
+//    MAP_ADC14_configureConversionMemory(ADC_MEM26,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+//            ADC_INPUT_A0, false);
+//    MAP_ADC14_configureConversionMemory(ADC_MEM27,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+//            ADC_INPUT_A1, false);
+//    MAP_ADC14_configureConversionMemory(ADC_MEM28,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+//            ADC_INPUT_A0, false);
+//    MAP_ADC14_configureConversionMemory(ADC_MEM29,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+//            ADC_INPUT_A1, false);
+//    MAP_ADC14_configureConversionMemory(ADC_MEM30,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+//            ADC_INPUT_A0, false);
+//    MAP_ADC14_configureConversionMemory(ADC_MEM31,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+//            ADC_INPUT_A1, false);
 
     MAP_ADC14_setPowerMode(ADC_UNRESTRICTED_POWER_MODE);
     // Cambia entre canales automáticamente
@@ -174,10 +174,10 @@ void PORT4_IRQHandler(void)
         ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
         MAP_DMA_enableChannel(7);
     }
-    else if (N==3)
+    else if (N==4)
     {
-        ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
         MAP_DMA_disableModule();
+        ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
         MAP_Interrupt_disableInterrupt(INT_PORT4);
     }
     P4->IFG &= ~BIT6;
