@@ -50,6 +50,7 @@ int main(void)
 {
     /* Stop Watchdog  */
     MAP_WDT_A_holdTimer();
+    MAP_Interrupt_disableMaster();
 
 
     memset(controlTable, 0x00, 1024);
@@ -70,19 +71,19 @@ int main(void)
      ****************************************************************************/
 
     // Configuro 1.5 como entrada
-    MAP_GPIO_setAsInputPin(GPIO_PORT_P4, GPIO_PIN6);
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P3, GPIO_PIN6);
     //MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN4);
 
 
     // Limpio bandera de interrupciones y activo las del puerto 1.5
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, GPIO_PIN6);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P4, GPIO_PIN6);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN6);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P3, GPIO_PIN6);
 
     // Seteo que interrumpta por flanco de subida
-    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P4,GPIO_PIN6,GPIO_LOW_TO_HIGH_TRANSITION);
+    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P3,GPIO_PIN6,GPIO_LOW_TO_HIGH_TRANSITION);
 
     // Activo las interrupciones generales del puerto 1
-    MAP_Interrupt_enableInterrupt(INT_PORT4);
+    MAP_Interrupt_enableInterrupt(INT_PORT3);
     /****************************************************************************/
 
     /****************************************************************************
@@ -100,14 +101,62 @@ int main(void)
             GPIO_PIN5 | GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
 
     // Configuro conversión secuencial de memoria 0 y 1, en bucle
-    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM1, true);
+    MAP_ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM25, true);
 
 
     // Asigno las memorias a los canales del ADC, referencia AVCC
     MAP_ADC14_configureConversionMemory(ADC_MEM0,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A0, false);
-    MAP_ADC14_configureConversionMemory(ADC_MEM1,ADC_VREFPOS_AVCC_VREFNEG_VSS,
-            ADC_INPUT_A1, false);
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM1,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM2,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM3,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM4,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM5,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM6,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM7,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM8,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM9,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM10,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM11,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM12,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM13,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM14,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM15,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM16,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM17,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM18,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM19,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM20,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM21,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM22,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM23,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM24,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A0, false);
+      MAP_ADC14_configureConversionMemory(ADC_MEM25,ADC_VREFPOS_AVCC_VREFNEG_VSS,
+              ADC_INPUT_A1, false);
 
     ADC14_setPowerMode(ADC_UNRESTRICTED_POWER_MODE);
     // Cambia entre canales automáticamente
@@ -132,7 +181,7 @@ int main(void)
                                   UDMA_ATTR_ALTSELECT | UDMA_ATTR_USEBURST |
                                   UDMA_ATTR_HIGH_PRIORITY |
                                   UDMA_ATTR_REQMASK);
-    //MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
+    MAP_DMA_enableChannelAttribute(DMA_CH7_ADC14, UDMA_ATTR_USEBURST);
 
 
     MAP_DMA_setChannelControl(UDMA_PRI_SELECT | DMA_CH7_ADC14,
@@ -147,11 +196,12 @@ int main(void)
         UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
         (void*) &data[26], 26);
 
-    
+
+
 
     MAP_DMA_assignInterrupt(DMA_INT1, 7);
-    MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
     MAP_DMA_assignChannel(DMA_CH7_ADC14);
+    MAP_Interrupt_enableInterrupt(INT_DMA_INT1);
     MAP_DMA_clearInterruptFlag(7);
 
 
@@ -177,7 +227,7 @@ int main(void)
  * que efectivamente provenga del P1.4).
  * A la hora de probar otra cosa, aterrar esta pata
  */
-void PORT4_IRQHandler(void)
+void PORT3_IRQHandler(void)
 {
     if (N==0)
     {
@@ -186,10 +236,11 @@ void PORT4_IRQHandler(void)
         MAP_ADC14_enableConversion();
         MAP_ADC14_toggleConversionTrigger();
     }
-    else if (N==1)
+    else if (N==2)
     {
         MAP_ADC14_disableModule();
         MAP_DMA_disableModule();
+        ++N;
     }
     P1IFG &= ~BIT4;
     ++N;
