@@ -11,11 +11,15 @@
 #ifndef MODULO_PWRCONF_H_
 #define MODULO_PWRCONF_H_
 
-#define DMA_BLOCK_SIZE 24
-#define NUMBER_OF_BLOCKS 220
+#include "modulo_PwrProc.h"
+
+
 
 // Bloque de datos
 extern uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
+// Variables de tiempo definidas en modulo_PwrProc
+extern uint16_t sampling_time;
+extern uint16_t frequency_period;
 
 
 /**
@@ -45,8 +49,8 @@ void configDMA();
 /**
  * Configuración del Timer3 (el que no se usa en otras partes).
  * Configuración:
- *      -CLK 48MHz
- *      -Divide hasta 24MHz
+ *      -CLK 24MHz
+ *      -Divide hasta 12MHz
  *      -Sin interrupciones activas
  */
 void configTimer();

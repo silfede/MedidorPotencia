@@ -197,13 +197,22 @@ void PORT4_IRQHandler(void)
         ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
         // Habilito el DMA
         MAP_DMA_enableChannel(7);
+        // Inicio cuenta de períodos
+        MAP_Timer_A_startCounter(TIMER_A3_BASE, TIMER_A_CONTINUOUS_MODE);
     }
-    else if (N==100)
+    else if (N==10)
     {
         // Fuerzo a deshabilitar al DMA
         MAP_DMA_disableModule();
         // Fuerzo a deshabilitar al ADC
         ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
+        // Guardo el tiempo que toma el sampleo
+        sampling_time = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
+    }
+    else if (N==100)
+    {
+        frequency_period = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
+        MAP_Timer_A_stopTimer(TIMER_A3_BASE);
         // Deshabilito interrupciones del puerto toggle
         MAP_Interrupt_disableInterrupt(INT_PORT4);
     }
