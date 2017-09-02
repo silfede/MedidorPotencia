@@ -58,7 +58,7 @@ void proc_PyF(int iter_PingPong)
 
 
     // Integración por método de Simpson
-
+/*
     // Paso de integrasción (tiempo de sampleo)
     h=sampling_time/ (n * 12e6f);
 
@@ -76,7 +76,7 @@ void proc_PyF(int iter_PingPong)
             s2=s2+f(a+i*h);
         }
     }
-      sum=h/3*(f(a)+f(b)+4*s2+2*s1);
+      sum=h/3*(f(a)+f(b)+4*s2+2*s1);*/
 
 }
 
