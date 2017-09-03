@@ -12,7 +12,10 @@
 #define DMA_BLOCK_SIZE 24
 #define NUMBER_OF_BLOCKS 220
 
-
+#define GAINVOLT 44
+#define GAINCURRENT 66e-3f
+// Gain ADC = Vcc/2^14
+#define GAINADC 3.3f/16384
 
 /*
  * Función para pedir frecuencia. Automáticamente llama al procesamiento
@@ -35,9 +38,10 @@ void proc_freq(uint16_t timer);
 
 
 /*
- * Procesa los datos relevados por el ADC y el Timer.
- * Guarda los resultados en las variables arriba definidas.
+ * Procesa los valores obtenidos por el ADC y el timer, hallando la
+ * potencia media en 10 perídos. Se definen las ganancias arriba descritas
+ * para transformar las medidas del ADC a los valores reales.
  */
-void proc_PyF();
+void proc_pwr();
 
 #endif /* MODULO_PWRPROC_H_ */

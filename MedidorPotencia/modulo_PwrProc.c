@@ -23,6 +23,8 @@ uint16_t iter_PingPong = 0;
 /* Varaibles locales */
 float frecuencia;
 
+
+/* Devuelve el número de pares de muestras */
 int SampleNumber(uint16_t iter_PingPong)
 {
     int i;
@@ -81,25 +83,21 @@ void proc_freq(uint16_t timer)
 
 void proc_pwr()
 {
-    int n;
-
+    uint32_t s1=0,s2=0,sum=0;
+    float potencia;
+    int i,n;
+    float h;
     // Número de muestras recabadas por ADC
     n = SampleNumber(iter_PingPong);
 
-}
+    /* Integración por el método de Simpson:
+     *
+     * int(y_i) entre a y b = h/3 * (y0 + 4(y1+y3+...) + 2(y2+y4+...) + yn)
+     * siendo h=(b-a)/n el paso de integración
+     */
 
-void proc_PyF()
-{
-    int i,n;
-    float b,s1=0,s2=0,h;
-    // Número de pares de muestras (corriente y volt)
-    n = SampleNumber(iter_PingPong);
-
-
-    // Integración por método de Simpson
-/*
-    // Paso de integración (tiempo de sampleo)
-    h=sampling_time/ (n * 12e6f);
+    // Tiempo entre muestras sucesivas
+    h = sampling_time / (n * 12e6f);
 
     if(n%2==1)
         n -=1;
@@ -108,16 +106,30 @@ void proc_PyF()
     {
         if(i%2==0)
         {
-            s1=s1+f(a+i*h);
+            s1=s1+data[2*i]*data[2*i+1];
         }
         else
         {
-            s2=s2+f(a+i*h);
+            s2=s2+data[2*i]*data[2*i+1];
         }
     }
-      sum=h/3*(f(a)+f(b)+4*s2+2*s1);*/
+    // Suma parcial de la integral
+    sum=(data[0]*data[1]+data[2*n]*data[2*n+1]+4*s2+2*s1);
+    /* Resta multiplicar por los factores de escala: ganancia de voltaje y
+     * corriente, y factor de escala del ADC
+     */
+    potencia = sum * h/3 * GAINVOLT * GAINCURRENT * GAINADC * GAINADC / 10;
 
+    /* Transformo en chars para poder enviar mediante UART.
+     * Luego agrego a buffer de envío y mando.
+     */
+    unsigned char *chptr;
+    chptr = (unsigned char *) &potencia;
+    //Tx(*chptr++);Tx(*chptr++);Tx(*chptr++);Tx(*chptr);
+    // ENCOLAR RESPEUSTA UART
 }
+
+
 
 
 
