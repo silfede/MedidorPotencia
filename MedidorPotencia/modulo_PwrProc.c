@@ -8,16 +8,20 @@
 #include "modulo_PwrProc.h"
 #include "modulo_PwrConf.h"
 
-/* Las siguientes variables se definen aquí pero se modifican
+/*
+ * Las siguientes variables se definen aquí pero se modifican
  * en la configuración de este módulo
- * */
- /* Variable donde guardo los resultados del ADC para procesar */
-uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
-/* Tiempo durante el cual se samplea */
-uint16_t sampling_time = 0;
-/* Tiempo para medir la frecuencia */
-uint16_t frequency_period = 0;
+ */
 
+// Variable donde guardo los resultados del ADC para procesar
+uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
+// Tiempo durante el cual se samplea
+uint16_t sampling_time = 0;
+// Número de interrupciones del DMA
+uint16_t iter_PingPong = 0;
+
+/* Varaibles locales */
+float frecuencia;
 
 int SampleNumber(uint16_t iter_PingPong)
 {
@@ -35,18 +39,56 @@ int SampleNumber(uint16_t iter_PingPong)
     }
 }
 
-void req_PyF()
+void read_pwr()
 {
     MAP_Interrupt_disableMaster();
+
     // Reseteo el array de data
     memset(data, 0x00000000, NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE);
-    configToggle();
+
+    configTimer();
+    // Interrupción de señal cuadrada. ISR configurada para pwr.
+    configToggle(false);
     configADC();
     configDMA();
     MAP_Interrupt_enableMaster();
 }
 
-void proc_PyF(int iter_PingPong)
+void read_freq()
+{
+    MAP_Interrupt_disableMaster();
+    configTimer();
+
+    // Interrupción de señal cuadrada. ISR configurada para freq.
+    configToggle(true);
+    MAP_Interrupt_enableMaster();
+
+}
+
+
+void proc_freq(uint16_t timer)
+{
+    frecuencia = 100 * timer / 12e6f;
+    /* Transformo en chars para poder enviar mediante UART.
+     * Luego agrego a buffer de envío y mando.
+     */
+    unsigned char *chptr;
+    chptr = (unsigned char *) &frecuencia;
+    //Tx(*chptr++);Tx(*chptr++);Tx(*chptr++);Tx(*chptr);
+    // ENCOLAR RESPEUSTA UART
+}
+
+
+void proc_pwr()
+{
+    int n;
+
+    // Número de muestras recabadas por ADC
+    n = SampleNumber(iter_PingPong);
+
+}
+
+void proc_PyF()
 {
     int i,n;
     float b,s1=0,s2=0,h;
@@ -54,12 +96,9 @@ void proc_PyF(int iter_PingPong)
     n = SampleNumber(iter_PingPong);
 
 
-    frecuencia = 100 * frequency_period / 12e6f;
-
-
     // Integración por método de Simpson
 /*
-    // Paso de integrasción (tiempo de sampleo)
+    // Paso de integración (tiempo de sampleo)
     h=sampling_time/ (n * 12e6f);
 
     if(n%2==1)

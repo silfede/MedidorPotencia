@@ -19,7 +19,9 @@
 extern uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
 // Variables de tiempo definidas en modulo_PwrProc
 extern uint16_t sampling_time;
-extern uint16_t frequency_period;
+// Número de interrupciones del DMA
+extern uint16_t iter_PingPong;
+
 
 
 /**
@@ -59,8 +61,11 @@ void configTimer();
 /**
  * Configuración puerto toggle para medición de períodos.
  * Habilita la interrupción del puerto PIN4.6
+ * @param is_freq Bandera que indica si se está en modo leer frecuencia.
+ * En caso contrario, se está en modo leer potencia.
+ *
  */
-void configToggle();
+void configToggle(bool is_freq);
 
 
 #endif /* MODULO_PWRCONF_H_ */

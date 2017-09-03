@@ -12,16 +12,27 @@
 #define DMA_BLOCK_SIZE 24
 #define NUMBER_OF_BLOCKS 220
 
-/* Lugares donde se retornan los valores una vez encontrados */
-float potencia,frecuencia;
 
 
 /*
- * Función para pedir valores de potencia y frecuencia.
- * Los valores de retorno se dan en potencia y frecuencia definidos
- * al inicio.
+ * Función para pedir frecuencia. Automáticamente llama al procesamiento
+ * el cual se encarga de enviar el resultado.
  */
-void req_PyF();
+void read_freq();
+
+/*
+ * Función para pedir potencia. Automáticamente llama al procesamiento
+ * el cual se encarga de enviar el resultado.
+ */
+void read_pwr();
+
+/*
+ * Transforma el número del Timer al valor real de la frecuencia.
+ * Posteriormente lo encola para mandar por UART.
+ * @param timer Valor del timer
+ */
+void proc_freq(uint16_t timer);
+
 
 /*
  * Procesa los datos relevados por el ADC y el Timer.

@@ -17,11 +17,11 @@
 #endif
 uint8_t controlTable[256];
 
-/* Local variables */
-// i indica cuantas iteraciones necesitó del ping-pong
-static uint16_t i;
+/* Variables locales */
 // Número de períodos
 static uint16_t N;
+// Bandera para identificar si se pide frec o pwr
+static bool reading_freq;
 
 /*------------------------------------------------------------------------------*/
 
@@ -99,7 +99,8 @@ void configADC()
 
 void configDMA()
 {
-    i = 0;
+    iter_PingPong = 0;
+
     // Habilitación del módulo
    DMA_enableModule();
    DMA_setControlBase(controlTable);
@@ -132,7 +133,7 @@ void configDMA()
 
 void DMA_INT1_IRQHandler(void)
 {
-    ++i;
+    ++iter_PingPong;
     /* Switch between primary and alternate bufferes with DMA's PingPong mode */
     if (DMA_getChannelAttribute(7) & UDMA_ATTR_ALTSELECT)
     {
@@ -140,7 +141,7 @@ void DMA_INT1_IRQHandler(void)
             UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
         DMA_setChannelTransfer(UDMA_PRI_SELECT | DMA_CH7_ADC14,
             UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-            (void*) &data[(i+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+            (void*) &data[(iter_PingPong+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
     }
     else
     {
@@ -148,7 +149,7 @@ void DMA_INT1_IRQHandler(void)
             UDMA_SIZE_32 | UDMA_SRC_INC_32 | UDMA_DST_INC_32 | UDMA_ARB_32);
         DMA_setChannelTransfer(UDMA_ALT_SELECT | DMA_CH7_ADC14,
             UDMA_MODE_PINGPONG, (void*) &ADC14->MEM[0],
-            (void*) &data[(i+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
+            (void*) &data[(iter_PingPong+1)*DMA_BLOCK_SIZE], DMA_BLOCK_SIZE);
     }
 }
 
@@ -169,7 +170,7 @@ void configTimer()
 
 /*------------------------------------------------------------------------------*/
 
-void configToggle()
+void configToggle(bool is_freq)
 {
     N = 0;
     // Configuro 4.6 como entrada
@@ -182,39 +183,58 @@ void configToggle()
     // Seteo que interrumpta por flanco de subida
     MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P4,GPIO_PIN6,GPIO_LOW_TO_HIGH_TRANSITION);
 
+    reading_freq = is_freq;
     // Activo las interrupciones generales del puerto
     MAP_Interrupt_enableInterrupt(INT_PORT4);
 }
 
 /*
- * ISR del puerto donde se recibe la señal cuadrada.
+ * ISR del puerto donde se recibe la señal cuadrada. P4.6
  */
 void PORT4_IRQHandler(void)
 {
-    if(N==0)
+    // Si se está en modo frecuencia
+    if (reading_freq)
     {
-        // Enciendo el ADC
-        ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
-        // Habilito el DMA
-        MAP_DMA_enableChannel(7);
-        // Inicio cuenta de períodos
-        MAP_Timer_A_startCounter(TIMER_A3_BASE, TIMER_A_CONTINUOUS_MODE);
+        if(N==0)
+        {
+            // Inicio cuenta de períodos
+            MAP_Timer_A_startCounter(TIMER_A3_BASE, TIMER_A_CONTINUOUS_MODE);
+        }
+        else if (N==100)
+        {
+            sampling_time = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
+            MAP_Timer_A_stopTimer(TIMER_A3_BASE);
+            // Deshabilito interrupciones del puerto toggle
+            MAP_Interrupt_disableInterrupt(INT_PORT4);
+            // Proceso valor del timer y envío
+            proc_freq(sampling_time);
+        }
     }
-    else if (N==10)
+    // Si el modo es medir potencia
+    else
     {
-        // Fuerzo a deshabilitar al DMA
-        MAP_DMA_disableModule();
-        // Fuerzo a deshabilitar al ADC
-        ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
-        // Guardo el tiempo que toma el sampleo
-        sampling_time = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
-    }
-    else if (N==100)
-    {
-        frequency_period = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
-        MAP_Timer_A_stopTimer(TIMER_A3_BASE);
-        // Deshabilito interrupciones del puerto toggle
-        MAP_Interrupt_disableInterrupt(INT_PORT4);
+        if(N==0)
+        {
+            // Enciendo el ADC
+            ADC14->CTL0 |= ADC14_CTL0_SC | ADC14_CTL0_ENC;
+            // Habilito el DMA
+            MAP_DMA_enableChannel(7);
+            // Inicio cuenta de períodos
+            MAP_Timer_A_startCounter(TIMER_A3_BASE, TIMER_A_CONTINUOUS_MODE);
+        }
+        else if (N==10)
+        {
+            // Fuerzo a deshabilitar al DMA
+            MAP_DMA_disableModule();
+            // Fuerzo a deshabilitar al ADC
+            ADC14->CTL0 &= ~(ADC14_CTL0_ENC | ADC14_CTL0_CONSEQ_0);
+            // Guardo el tiempo que toma el sampleo
+            sampling_time = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
+            MAP_Timer_A_stopTimer(TIMER_A3_BASE);
+            MAP_Interrupt_disableInterrupt(INT_PORT4);
+            // ENCOLAR FUNCIÓN DE PROCESAMIENTO
+        }
     }
     P4->IFG &= ~BIT6;
     ++N;
