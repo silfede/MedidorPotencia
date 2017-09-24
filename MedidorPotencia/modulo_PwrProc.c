@@ -6,7 +6,9 @@
  */
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 #include "modulo_PwrProc.h"
-#include "modulo_PwrConf.h"
+
+#define FREQ 1
+#define POWER 0
 
 /*
  * Las siguientes variables se definen aquí pero se modifican
@@ -50,7 +52,7 @@ void read_pwr()
 
     configTimer();
     // Interrupción de señal cuadrada. ISR configurada para pwr.
-    configToggle(false);
+    configToggle(POWER);
     configADC();
     configDMA();
     MAP_Interrupt_enableMaster();
@@ -62,7 +64,7 @@ void read_freq()
     configTimer();
 
     // Interrupción de señal cuadrada. ISR configurada para freq.
-    configToggle(true);
+    configToggle(FREQ);
     MAP_Interrupt_enableMaster();
 
 }
@@ -70,14 +72,14 @@ void read_freq()
 
 void proc_freq(uint16_t timer)
 {
-    frecuencia = 100 * timer / 12e6f;
+    frecuencia = 100 * 24e6f / timer;
     /* Transformo en chars para poder enviar mediante UART.
      * Luego agrego a buffer de envío y mando.
      */
     unsigned char *chptr;
     chptr = (unsigned char *) &frecuencia;
     //Tx(*chptr++);Tx(*chptr++);Tx(*chptr++);Tx(*chptr);
-    // ENCOLAR RESPEUSTA UART
+    // RESPUESTA UART
 }
 
 
@@ -126,7 +128,7 @@ void proc_pwr()
     unsigned char *chptr;
     chptr = (unsigned char *) &potencia;
     //Tx(*chptr++);Tx(*chptr++);Tx(*chptr++);Tx(*chptr);
-    // ENCOLAR RESPEUSTA UART
+    // RESPUESTA UART
 }
 
 

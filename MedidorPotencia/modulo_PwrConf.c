@@ -157,8 +157,8 @@ void DMA_INT1_IRQHandler(void)
 
 const Timer_A_ContinuousModeConfig continuousModeConfig =
 {
-        TIMER_A_CLOCKSOURCE_SMCLK,           // SMCLK Clock Source (24MHz)
-        TIMER_A_CLOCKSOURCE_DIVIDER_2,       // SMCLK/2 = 12MHz
+        TIMER_A_CLOCKSOURCE_SMCLK,           // SMCLK Clock Source (48MHz)
+        TIMER_A_CLOCKSOURCE_DIVIDER_2,       // SMCLK/2 = 24MHz
         TIMER_A_TAIE_INTERRUPT_DISABLE,      // Disable Overflow ISR
         TIMER_A_DO_CLEAR                     // Clear Counter
 };
@@ -234,6 +234,7 @@ void PORT4_IRQHandler(void)
             MAP_Timer_A_stopTimer(TIMER_A3_BASE);
             MAP_Interrupt_disableInterrupt(INT_PORT4);
             // ENCOLAR FUNCIÓN DE PROCESAMIENTO
+            proc_pwr();
         }
     }
     P4->IFG &= ~BIT6;

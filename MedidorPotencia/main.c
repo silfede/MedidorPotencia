@@ -11,7 +11,7 @@
  *             ------------------
  *         /|\|                  |
  *          | |                  |
- *          --|RST          P1.5 | <-- GPIO req
+ *          --|RST          P4.6 | <-- GPIO req
  *            |                  |
  *            |             P5.5 | <-- ADC / A0
  *            |             P5.4 | <-- ADC / A1
@@ -26,20 +26,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "modulo_PwrConf.h"
+#include "modulo_PwrProc.h"
 
 
+#define TEST_FREQ 1
 
-uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
+volatile int i;
 
-
-
-// Índice para indicar la secuencia del DMA
-static uint16_t i=0;
-static uint16_t j=0;
-
-
-static volatile uint32_t mclk;
+static volatile uint32_t mclk,smclk;
 int main(void)
 {
     /* Stop Watchdog  */
@@ -48,12 +42,6 @@ int main(void)
     /* Deshabilitar las interrupciones antes de configurar todo */
     MAP_Interrupt_disableMaster();
 
-    memset(data, 0x00, NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE);
-
-
-    /****************************************************************************
-     ************************CONFIGURACIÓN DE RELOJES****************************
-     ****************************************************************************/
     // Habilito FPU
     MAP_FPU_enableModule();
 
@@ -61,54 +49,20 @@ int main(void)
      * El seteo de la frecuencia la realizo en el archivo system_msp432p401r.c
      */
     mclk = CS_getMCLK();
-
-    /****************************************************************************
-     ************************CONFIGURACIÓN DE GPIO*******************************
-     ****************************************************************************/
-
-    configToggle();
-    /****************************************************************************/
-
-    /****************************************************************************
-     ************************CONFIGURACIÓN DE ADC14******************************
-     ****************************************************************************/
-
-    configADC();
-
-    /*MAP_ADC14_enableInterrupt(ADC_INT0);
-    MAP_ADC14_enableInterrupt(ADC_INT1);
-
-
-    // Enabling Interrupts
-    MAP_Interrupt_enableInterrupt(INT_ADC14);*/
-    /****************************************************************************/
-
-    /****************************************************************************
-     **************************CONFIGURACIÓN DE DMA******************************
-     ****************************************************************************/
-   configDMA();
+    smclk = CS_getSMCLK();
 
 
     MAP_Interrupt_enableMaster();
-
+    read_freq();
     while(1)
     {
         
-    }
-}
+#if TEST_FREQ
+    // Si hacemos el test de frecuencia
 
-
-
-
-void ADC14_IRQHandler(void)
-{
-    if(ADC14->IFGR0 & ADC14_IFGR0_IFG1)
-    {
-        ++j;
-
-        // Limpio interrupciones
-        ADC14->CLRIFGR0 |= ADC14_IFGR0_IFG0 | ADC14_IFGR0_IFG0;
+#else
+        read_pwr();
+#endif
 
     }
-
 }
