@@ -72,7 +72,7 @@ void read_freq()
 
 void proc_freq(uint16_t timer)
 {
-    frecuencia = 100 * 24e6f / timer;
+    frecuencia = 100 * 12053388 / timer;
     /* Transformo en chars para poder enviar mediante UART.
      * Luego agrego a buffer de envío y mando.
      */

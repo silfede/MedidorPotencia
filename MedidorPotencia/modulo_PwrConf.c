@@ -158,7 +158,7 @@ void DMA_INT1_IRQHandler(void)
 const Timer_A_ContinuousModeConfig continuousModeConfig =
 {
         TIMER_A_CLOCKSOURCE_SMCLK,           // SMCLK Clock Source (48MHz)
-        TIMER_A_CLOCKSOURCE_DIVIDER_2,       // SMCLK/2 = 24MHz
+        TIMER_A_CLOCKSOURCE_DIVIDER_4,       // SMCLK/4 = 12MHz
         TIMER_A_TAIE_INTERRUPT_DISABLE,      // Disable Overflow ISR
         TIMER_A_DO_CLEAR                     // Clear Counter
 };
@@ -200,11 +200,14 @@ void PORT4_IRQHandler(void)
         {
             // Inicio cuenta de períodos
             MAP_Timer_A_startCounter(TIMER_A3_BASE, TIMER_A_CONTINUOUS_MODE);
+            //TIMER_A3->CTL = TIMER_A_CTL_SSEL__SMCLK | TIMER_A_CTL_MC__CONTINUOUS | TIMER_A_CTL_ID_1;
         }
         else if (N==100)
         {
-            sampling_time = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
+            //TIMER_A3->CTL &= ~ TIMER_A_CTL_MC__STOP;
             MAP_Timer_A_stopTimer(TIMER_A3_BASE);
+
+            sampling_time = MAP_Timer_A_getCounterValue(TIMER_A3_BASE);
             // Deshabilito interrupciones del puerto toggle
             MAP_Interrupt_disableInterrupt(INT_PORT4);
             // Proceso valor del timer y envío

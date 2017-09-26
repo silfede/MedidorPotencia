@@ -48,6 +48,7 @@ int main(void)
     /*
      * El seteo de la frecuencia la realizo en el archivo system_msp432p401r.c
      */
+    CS_setDCOFrequency(48000000);
     mclk = CS_getMCLK();
     smclk = CS_getSMCLK();
 
