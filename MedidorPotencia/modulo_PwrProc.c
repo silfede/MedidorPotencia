@@ -17,6 +17,9 @@
 
 // Variable donde guardo los resultados del ADC para procesar
 uint32_t data[NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
+
+uint8_t adc_data[2*NUMBER_OF_BLOCKS*DMA_BLOCK_SIZE];
+
 // Tiempo durante el cual se samplea
 uint16_t sampling_time = 0;
 // Número de interrupciones del DMA
@@ -26,8 +29,8 @@ uint16_t iter_PingPong = 0;
 float frecuencia;
 
 
-/* Devuelve el número de pares de muestras */
-int SampleNumber(uint16_t iter_PingPong)
+/* Devuelve el número de muestras */
+uint16_t SampleNumber(uint16_t iter_PingPong)
 {
     int i;
     // Recorro solo el final del arreglo
@@ -37,7 +40,7 @@ int SampleNumber(uint16_t iter_PingPong)
         {
             if(data[i+2]==0 && data[i+3]==0)
             {
-                return (i-2)/2;
+                return (i-1);
             }
         }
     }
@@ -72,7 +75,7 @@ void read_freq()
 
 void proc_freq(uint16_t timer)
 {
-    frecuencia = 100 * 12053388 / timer;
+    frecuencia = 100 * FCLK / timer;
     /* Transformo en chars para poder enviar mediante UART.
      * Luego agrego a buffer de envío y mando.
      */
@@ -85,50 +88,37 @@ void proc_freq(uint16_t timer)
 
 void proc_pwr()
 {
-    uint32_t s1=0,s2=0,sum=0;
-    float potencia;
-    int i,n;
-    float h;
+    float time;
+    unsigned int i,u;
+    uint16_t n;
+    u = *(unsigned int*)&time;
     // Número de muestras recabadas por ADC
     n = SampleNumber(iter_PingPong);
 
-    /* Integración por el método de Simpson:
-     *
-     * int(y_i) entre a y b = h/3 * (y0 + 4(y1+y3+...) + 2(y2+y4+...) + yn)
-     * siendo h=(b-a)/n el paso de integración
+    // Tiempo durante el cual muestreo
+    time = sampling_time / FCLK;
+    /*
+     * Cabecera de los datos:
+     * n = número de muestras
+     * sampling_time = ticks de muestreo
      */
+    adc_data[0] = n & 0xFF;
+    adc_data[1] = n >> 8;
+    adc_data[2] = u & 0xFF;
+    adc_data[3] = u >> 8;
+    adc_data[4] = u >> 16;
+    adc_data[5] = u >> 24;
 
-    // Tiempo entre muestras sucesivas
-    h = sampling_time / (n * 12e6f);
-
-    if(n%2==1)
-        n -=1;
-
-    for(i=1;i<=n-1;i++)
+    for(i=3;i<=(n+3);i++)
     {
-        if(i%2==0)
-        {
-            s1=s1+data[2*i]*data[2*i+1];
-        }
-        else
-        {
-            s2=s2+data[2*i]*data[2*i+1];
-        }
+        adc_data[2*i] = data[i-3] & 0xFF;
+        adc_data[2*i+1] = data[i-3]>>8;
     }
-    // Suma parcial de la integral
-    sum=(data[0]*data[1]+data[2*n]*data[2*n+1]+4*s2+2*s1);
-    /* Resta multiplicar por los factores de escala: ganancia de voltaje y
-     * corriente, y factor de escala del ADC
-     */
-    potencia = sum * h/3 * GAINVOLT * GAINCURRENT * GAINADC * GAINADC / 10;
+    adc_data[i]='\r';
 
-    /* Transformo en chars para poder enviar mediante UART.
-     * Luego agrego a buffer de envío y mando.
-     */
-    unsigned char *chptr;
-    chptr = (unsigned char *) &potencia;
-    //Tx(*chptr++);Tx(*chptr++);Tx(*chptr++);Tx(*chptr);
-    // RESPUESTA UART
+    //transmitir_cadena(adc_data);
+
+
 }
 
 

@@ -13,10 +13,14 @@
 #define DMA_BLOCK_SIZE 24
 #define NUMBER_OF_BLOCKS 220
 
+#define FCLK 12053388
+
 #define GAINVOLT 44
 #define GAINCURRENT 66e-3f
 // Gain ADC = Vcc/2^14
 #define GAINADC 3.3f/16384
+
+
 
 
 #include "modulo_PwrConf.h"
